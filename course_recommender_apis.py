@@ -9,6 +9,8 @@ env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
 # FastAPI app
+from fastapi import FastAPI
+
 app = FastAPI(title="Course Recommender API")
 
 # -----------------------------

@@ -1,26 +1,53 @@
-# get_db_connection.py
-
 import pyodbc
 import os
 from fastapi import HTTPException
+from dotenv import load_dotenv
+from pathlib import Path
 
-from fastapi import FastAPI
-from course_recommender_apis import get_db_connection, _rows_to_dicts
+#Load .env from root directory (parent of web_apis)
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
-app = FastAPI(title="Course Recommender API")
-
+# Dependency to get DB connection
 def get_db_connection():
-    try:
+
+# Get environment
+    env = 'PRODUCTION' #os.getenv('ENVIRONMENT').upper()
+
+    if env == 'PRODUCTION':
+        DB_SERVER = os.getenv('DB_SERVER')
+        DB_DATABASE = os.getenv('DB_DATABASE')
+        DB_USERNAME = os.getenv('DB_USERNAME')
+        DB_PASSWORD = os.getenv('DB_PASSWORD')
+
         connection_string = (
-            f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-            f"SERVER={os.environ.get('DB_SERVER')};"
-            f"DATABASE={os.environ.get('DB_DATABASE')};"
-            f"UID={os.environ.get('DB_USERNAME')};"
-            f"PWD={os.environ.get('DB_PASSWORD')};"
-            "Encrypt=yes;"
-            "TrustServerCertificate=no;"
-            "Connection Timeout=30;"
+            'DRIVER={ODBC Driver 18 for SQL Server};'
+            f'SERVER={DB_SERVER};'
+            f'DATABASE={DB_DATABASE};'
+            f'UID={DB_USERNAME};'
+            f'PWD={DB_PASSWORD};'
+            'TrustServerCertificate=no;'
+            'Connection Timeout=30;'
+            'Encrypt=yes;'
         )
-        return pyodbc.connect(connection_string)
+    else:        
+        DB_SERVER = "localhost"
+        DB_DATABASE = "Homework3Group1;"
+
+        connection_string = (
+            'DRIVER={ODBC Driver 18 for SQL Server};'
+            f'SERVER={DB_SERVER};'
+            f'DATABASE={DB_DATABASE};'
+            'TrustServerCertificate=yes;'
+            'Trusted_Connection=yes;'
+            'Connection Timeout=30;'
+            'Encrypt=yes;'
+        )        
+
+    try:
+        conn = pyodbc.connect(connection_string)
+        return conn
+    except pyodbc.Error as e:
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
