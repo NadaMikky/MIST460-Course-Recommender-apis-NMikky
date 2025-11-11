@@ -1,25 +1,37 @@
+import os
 import pyodbc
-from fastapi import HTTPException
-from typing import List, Dict, Any
+from fastapi import FastAPI, HTTPException
+from dotenv import load_dotenv
+from pathlib import Path
 
-# This file contains common database utility functions 
-# used by other modules like course_recommender_apis.py.
-# Database connection parameters
-# Read database settings from environment variables
-DB_SERVER = os.environ.get('DB_SERVER', 'mist-mikky.database.windows.net')
-DB_DATABASE = os.environ.get('DB_DATABASE', 'Course_Recommender_MikkyDB')
-DB_USERNAME = os.environ.get('DB_USERNAME')
-DB_PASSWORD = os.environ.get('DB_PASSWORD')
-DB_DRIVER = '{ODBC Driver 18 for SQL Server}'  # Use 18 for Azure SQL
+# Load environment variables from .env (optional for local development)
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
+# FastAPI app
+app = FastAPI(title="Course Recommender API")
+
+# -----------------------------
+# Database Connection Function
+# -----------------------------
 def get_db_connection():
     """
-    Returns a pyodbc connection to the Azure SQL Database.
-    Raises HTTPException(500) if connection fails.
+    Connect to Azure SQL Database using environment variables.
     """
-    try:
-        conn_str = (
-            f'DRIVER={DB_DRIVER};'
+    env = 'PRODUCTION'  # or use os.getenv("ENVIRONMENT")
+
+    if env == 'PRODUCTION':
+        DB_SERVER = os.getenv('DB_SERVER')  # e.g., tcp:mist-mikky.database.windows.net,1433
+        DB_DATABASE = os.getenv('DB_DATABASE')  # Course_Recommender_MikkyDB
+        DB_USERNAME = os.getenv('DB_USERNAME')
+        DB_PASSWORD = os.getenv('DB_PASSWORD')
+
+        # Remove tcp: prefix if present
+        if DB_SERVER.startswith("tcp:"):
+            DB_SERVER = DB_SERVER[4:]
+
+        connection_string = (
+            'DRIVER={ODBC Driver 18 for SQL Server};'
             f'SERVER={DB_SERVER};'
             f'DATABASE={DB_DATABASE};'
             f'UID={DB_USERNAME};'
@@ -28,14 +40,36 @@ def get_db_connection():
             'TrustServerCertificate=no;'
             'Connection Timeout=30;'
         )
-        return pyodbc.connect(conn_str)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
+    else:
+        # Local development
+        DB_SERVER = "localhost"
+        DB_DATABASE = "Course_Recommender_MikkyDB"
 
-def _rows_to_dicts(cursor, rows) -> List[Dict[str, Any]]:
+        connection_string = (
+            'DRIVER={ODBC Driver 18 for SQL Server};'
+            f'SERVER={DB_SERVER};'
+            f'DATABASE={DB_DATABASE};'
+            'Trusted_Connection=yes;'
+            'TrustServerCertificate=yes;'
+            'Encrypt=yes;'
+            'Connection Timeout=30;'
+        )
+
+    try:
+        conn = pyodbc.connect(connection_string)
+        return conn
+    except pyodbc.Error as e:
+        raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# -----------------------------
+# Utility Function
+# -----------------------------
+def _rows_to_dicts(cursor, rows):
     """
-    Converts a pyodbc cursor row list to a list of dictionaries.
-    Each dictionary represents a row with column names as keys.
+    Convert database rows to list of dictionaries.
     """
     cols = [c[0] for c in cursor.description] if cursor.description else []
     result = []
@@ -45,3 +79,21 @@ def _rows_to_dicts(cursor, rows) -> List[Dict[str, Any]]:
             row_dict[col] = row[idx]
         result.append(row_dict)
     return result
+
+
+# -----------------------------
+# Example Endpoint
+# -----------------------------
+@app.get("/test-db")
+def test_db_connection():
+    """
+    Test endpoint to verify database connection.
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT TOP 5 * FROM sys.tables")  # simple test query
+        rows = cursor.fetchall()
+        return {"tables": _rows_to_dicts(cursor, rows)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

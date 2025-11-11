@@ -1,6 +1,13 @@
+# get_db_connection.py
+
 import pyodbc
 import os
 from fastapi import HTTPException
+
+from fastapi import FastAPI
+from course_recommender_apis import get_db_connection, _rows_to_dicts
+
+app = FastAPI(title="Course Recommender API")
 
 def get_db_connection():
     try:
