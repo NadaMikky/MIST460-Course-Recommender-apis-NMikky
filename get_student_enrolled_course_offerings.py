@@ -5,7 +5,7 @@ router = APIRouter()
 
 # 6. get_student_enrolled_course_offerings
 @router.get("/get_student_enrolled_course_offerings")
-def get_enrollments(student_id: int = Query(...)):
+def get_student_enrolled_course_offerings(student_id: int = Query(...)):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
