@@ -121,10 +121,10 @@ def get_student_enrolled_course_offerings_api(student_id: str):
 
 
 @app.post("/enroll_student/")
-def enroll_student_api(student_id: str, courseOfferingId: int):
-    return enroll_student(student_id, courseOfferingId)
+def enroll_student_api(student_id: str, course_offering_id: int):
+    return enroll_student(student_id, course_offering_id)
 
 
 @app.delete("/drop_student/")
-def drop_student_api(student_id: str, courseOfferingId: int):
-    return drop_student(student_id, courseOfferingId)
+def drop_student_api(student_id: str, course_offering_id: int):
+    return drop_student(student_id, course_offering_id)
