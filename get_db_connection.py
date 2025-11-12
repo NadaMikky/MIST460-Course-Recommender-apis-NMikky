@@ -8,11 +8,18 @@ from pathlib import Path
 env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
+# Helper function to convert rows to dictionaries
+def _rows_to_dicts(cursor, rows):
+    """Convert pyodbc rows to list of dictionaries"""
+    if not cursor.description:
+        return []
+    cols = [c[0] for c in cursor.description]
+    return [dict(zip(cols, row)) for row in rows]
+
 # Dependency to get DB connection
 def get_db_connection():
-
-# Get environment
-    env = 'PRODUCTION' #os.getenv('ENVIRONMENT').upper()
+    # Get environment
+    env = os.getenv('ENVIRONMENT', 'PRODUCTION').upper()
 
     if env == 'PRODUCTION':
         DB_SERVER = os.getenv('DB_SERVER')
