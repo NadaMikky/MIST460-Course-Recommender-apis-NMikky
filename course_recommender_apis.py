@@ -141,7 +141,7 @@ def enroll_student_api(student_id: str, course_offering_id: int):
     return enroll_student(student_id, course_offering_id)
 
 
-@app.delete("/drop_student/")
+@app.post("/drop_student/")
 def drop_student_api(student_id: str, course_offering_id: int):
     return drop_student(student_id, course_offering_id)
 
