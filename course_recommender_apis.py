@@ -4,7 +4,8 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
-from validate_user import router as validate_user_router
+# from validate_user import router as validate_user_router
+from validate_user import validate_user
 from find_current_semester_course_offering import router as find_courses_router
 from find_prerequisites import router as find_prerequisites_router
 from enroll_student import router as enroll_student_router
